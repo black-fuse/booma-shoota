@@ -1,47 +1,67 @@
-from panda3d.core import Vec3 as vec3
+from panda3d.core import Vec3
 
-class camera():
+class Camera():
     def __init__(self, base):
+        self.camFront = Vec3(0.294037, 0.758073, -0.582123)
+        self.camRight = Vec3(1.0, 0.0, 0.0)
         self.base = base
-        self.position = vec3(0, 0, 0)
+        self.position = Vec3(0, 0, 0)
         self.camera = base.camera
+        self.sensitivity = 0.5
+        self.speed = 15  # Movement speed
 
         self.mouse = base.mouseWatcherNode
+        self.camera.lookAt(20, 20, 20)
 
-        self.yaw = 0
-        self.pitch = 0
+        self.__yaw = 0
+        self.__pitch = 0
 
 
 
-        # movement options
-        self.base.accept("w", self.moveForward)
-        self.base.accept("a", self.moveLeft)
-        self.base.accept("s", self.moveBackward)
-        self.base.accept("d", self.moveRight)
+    def flightMovement(self, dt):
+        velocity = Vec3(0, 0, 0)
+
+        key_down = self.base.mouseWatcherNode.isButtonDown
+        if key_down("a"):
+            self.position -= self.camRight * self.speed * dt
+        if key_down("d"):
+            self.position += self.camRight * self.speed * dt
+        if key_down("w"):
+            self.position += self.camFront * self.speed * dt
+        if key_down("s"):
+            self.position -= self.camFront * self.speed * dt
+        if key_down("space"):
+            self.position += Vec3(0, 0, 1) * self.speed * dt
+        if key_down("shift"):
+            self.position -= Vec3(0, 0, 1) * self.speed * dt
+        if key_down("control"):
+            self.speed = 50
+
+        self.camera.setPos(self.position)
+
 
     def cameraMovement(self):
         md = self.base.win.getPointer(0)
+        display_center = (self.base.win.getXSize() // 2, self.base.win.getYSize() // 2)
         x = md.getX()
         y = md.getY()
 
-        if self.mouse.isButtonDown(1):
-            self.yaw = self.yaw - (x - 400)
-            self.pitch = self.pitch - (y - 300)
+        self.__yaw = self.__yaw - (x - display_center[0]) * self.sensitivity
+        self.__pitch = self.__pitch - (y - display_center[1]) * self.sensitivity
 
-            self.camera.setHpr(self.yaw, self.pitch, 0)
-    
-    def moveForward(self):
-        self.camera.setPos(self.camera, 0, 1, 0)
-    
-    def moveBackward(self):
-        self.camera.setPos(self.camera, 0, -1, 0)
+        self.__pitch = max(-90, min(90, self.__pitch))
+        self.camera.setHpr(self.__yaw, self.__pitch, 0)
 
-    def moveLeft(self):
-        self.camera.setPos(self.camera, -1, 0, 0)
+        # Reset mouse position for continuous movement
+        self.base.win.movePointer(0, display_center[0], display_center[1])
 
-    def moveRight(self):
-        self.camera.setPos(self.camera, 1, 0, 0)
+        self.camFront = self.camera.getQuat().getForward()
+        self.camRight = self.camera.getQuat().getRight()
 
-    def update(self):
-        clock = self.base.globalClock
+    def update_camera(self):
+        clock = self.base.clock
         dt = clock.getDt()
+
+        self.cameraMovement()
+        self.flightMovement(dt)
+        return True
