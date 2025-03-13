@@ -7,14 +7,17 @@ class sceneTemplate:
         self.base = base
         self.objList = []
 
-        self.floor = self.create_object("models/box", (0, 0, -2), (100, 100, 1))
+        self.floor = self.create_object(r"models\cube.egg", (0, 0, -2), (100, 100, 1), texture=r'Textures\white.jpg')
     
-    def create_object(self, model_path="models/box", position=(0,0,0), scale=(1,1,1), texture='Textures\white.jpg'):
+    def create_object(self, model_path=r"models\cube.egg", position=(0,0,0), scale=(1,1,1), texture=r'Textures\white.jpg'):
         obj = self.base.loader.loadModel(model_path)
         obj.reparentTo(self.base.render)
         obj.setPos(position)
         obj.setScale(scale)
         texture = self.base.loader.loadTexture(texture)
+        if not texture:
+            print("Texture not found")
+            texture = self.base.loader.loadTexture(r'Textures\white.jpg')
         obj.setTexture(texture)
         self.objList.append(obj)
         return obj
@@ -45,5 +48,5 @@ class scene2(sceneTemplate):
     def __init__(self, base):
         super().__init__(base)
         self.destroy_object(self.floor)
-        self.box = self.create_object("models/box", (0, 0, -2), (100, 100, 1),texture='Textures/red.jpg')
+        self.box = self.create_object(position=(0, 0, -2), scale=(100, 100, 1),texture='Textures/red.jpg')
 
